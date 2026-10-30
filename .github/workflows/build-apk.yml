@@ -1,5 +1,5 @@
 
-name: Build Zajel Chat APK
+name: Get Zajel Chat APK
 
 on:
   workflow_dispatch:
@@ -9,54 +9,47 @@ on:
       - '.github/workflows/build-apk.yml'
 
 jobs:
-  build:
+  extract:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get project files
+      - name: Download project files
         uses: actions/checkout@v4
 
-      - name: Install Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Find and extract ZIP
+      - name: Extract project ZIP
         run: |
-          mkdir -p project
+          mkdir -p project output
 
           ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No ZIP file found"
-            ls -la
+            echo "ERROR: Project ZIP not found"
             exit 1
           fi
 
-          echo "Found project: $ZIP_FILE"
           unzip -q "$ZIP_FILE" -d project
 
-      - name: Find Gradle project and build APK
+      - name: Find existing APK
         run: |
-          WRAPPER=$(find project -type f -name gradlew | head -n 1)
+          APK=$(find project -type f -iname '*.apk' | head -n 1)
 
-          if [ -z "$WRAPPER" ]; then
-            echo "ERROR: gradlew not found in ZIP"
-            find project -maxdepth 4 -type f | head -n 100
+          if [ -z "$APK" ]; then
+            echo "ERROR: No APK exists inside project ZIP"
             exit 1
           fi
 
-          PROJECT_DIR=$(dirname "$WRAPPER")
-          chmod +x "$WRAPPER"
-          cd "$PROJECT_DIR"
+          echo "Found APK: $APK"
 
-          ./gradlew assembleDebug --stacktrace
+          file "$APK"
+
+          cp "$APK" output/ZajelChat.apk
+
+          unzip -t output/ZajelChat.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ZajelChat-APK
-          path: project/**/build/outputs/apk/debug/*.apk
+          path: output/ZajelChat.apk
           if-no-files-found: error
           retention-days: 7
