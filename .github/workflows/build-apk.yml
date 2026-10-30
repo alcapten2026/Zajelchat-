@@ -1,3 +1,4 @@
+
 name: Build Zajel Chat APK
 
 on:
@@ -59,4 +60,3 @@ jobs:
           path: project/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
-          
